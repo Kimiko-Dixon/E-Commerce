@@ -4,25 +4,47 @@ const { Product, Category, Tag, ProductTag } = require('../../models');
 // The `/api/products` endpoint
 
 // get all products
-router.get('/', (req, res) => {
-  // find all products
-  // be sure to include its associated Category and Tag data
+router.get('/', async (req, res) => {
+  // find all products and include its associated Category and Tag data
+  try{
+    const allProducts = await Product.findAll({
+      order:['id'],
+      include:[{model: Category},{model: Tag}]
+    })
+    res.status(200).json(allProducts)
+  }
+  catch{
+    res.status(500).json('Failed to retrieve products')
+  }
 });
 
 // get one product
-router.get('/:id', (req, res) => {
-  // find a single product by its `id`
-  // be sure to include its associated Category and Tag data
+router.get('/:id', async (req, res) => {
+  // find a single product by its `id` and include its associated Category and Tag data
+  try{
+    const product = await Product.findByPk(req.params.id, {
+      include:[{model: Category},{model: Tag}]
+    })
+    //return a 404 status and a message if the product id does not match one in the database
+    if (!product){
+      res.status(404).json('Failed to find product')
+      return
+    }
+    res.status(200).json(product)
+  }
+  catch{
+    res.status(500).json('Failed to retrieve product')
+  }
 });
 
 // create new product
 router.post('/', (req, res) => {
   /* req.body should look like this...
     {
-      product_name: "Basketball",
-      price: 200.00,
-      stock: 3,
-      tagIds: [1, 2, 3, 4]
+      "product_name": "Basketball",
+      "price": 200.00,
+      "stock": 3,
+      "tagIds": [1, 2, 3, 4]
     }
   */
   Product.create(req.body)
@@ -87,13 +109,27 @@ router.put('/:id', (req, res) => {
       return res.json(product);
     })
     .catch((err) => {
-      // console.log(err);
       res.status(400).json(err);
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   // delete one product by its `id` value
+  try{
+    const deletedProduct = await Product.destroy({
+      where:{
+        id: req.params.id
+      }
+    })
+    //return a 404 status and a message if the product id does not match one in the database
+    if (!deletedProduct){
+      res.status(404).json('Failed to find product')
+    }
+    res.status(200).json(deletedProduct)
+  }
+  catch{
+    res.status(500).json('Failed to delete product')
+  }
 });
 
 module.exports = router;
